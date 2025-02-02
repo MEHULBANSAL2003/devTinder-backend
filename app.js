@@ -14,7 +14,8 @@ const { userRouter } = require("./src/routers/user.js");
 const { postRouter } = require("./src/routers/posts.js");
 
 const corsOptions = {
-  origin: "http://localhost:5173",
+  
+  origin: ["http://localhost:5173","https://main.d3gv3ow36kccoz.amplifyapp.com"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],

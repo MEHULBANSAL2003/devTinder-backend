@@ -93,6 +93,7 @@ postRouter.post("/post/delete/:postId", userAuth, async (req, res) => {
 
 postRouter.get("/posts", userAuth, async (req, res) => {
   try {
+
     const currUser = req.user;
     const pipeline = [
       {
