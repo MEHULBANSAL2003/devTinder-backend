@@ -21,9 +21,9 @@ userRouter.get("/user/requests/recieved", userAuth, async (req, res) => {
       data: requests,
     });
   } catch (err) {
-    res.status(err.status||500).json({
+    res.status(err.status || 500).json({
       result: "error",
-      message: err.message||"Internal server error",
+      message: err.message || "Internal server error",
     });
   }
 });
@@ -62,59 +62,63 @@ userRouter.get("/user/connection", userAuth, async (req, res) => {
       data: data,
     });
   } catch (err) {
-    res.status(err.status||500).json({
+    res.status(err.status || 500).json({
       result: "error",
-      message: err.message||"Internal server error",
+      message: err.message || "Internal server error",
     });
   }
 });
 
 userRouter.get("/user/feed", userAuth, async (req, res) => {
   try {
-    //user should see every card except his own... the one who are already friend and one whom he rejected or ignored already
-
     const currUser = req.user;
-
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-
-    limit = limit > 50 ? 50 : limit;
-
-    let skip = (page - 1) * limit;
-
+    let search = req.query.search || "";
     const connections = await ConnectionRequestModel.find({
       $or: [{ toUserId: currUser._id }, { fromUserId: currUser._id }],
     });
 
-    let notRequiredIds = [];
-    notRequiredIds.push(currUser._id);
+    let notRequiredIds = [currUser._id];
 
-    connections.map((row) => {
+    connections.forEach((row) => {
       if (row.fromUserId.toString() === currUser._id.toString()) {
         notRequiredIds.push(row.toUserId);
-      } else {  
+      } else {
         notRequiredIds.push(row.fromUserId);
       }
     });
+    let query = { _id: { $nin: notRequiredIds } };
 
-    let data = await User.find({
-      _id: { $nin: notRequiredIds },
-    })
-      .select("-password -email -createdAt -updatedAt -__v")
-      .skip(skip)
-      .limit(limit);
+    if (search) {
+      const regex = new RegExp("^" + search, "i");
+      query.$or = [{ firstName: regex }, { userName: regex }];
+    }
+
+    let data;
+    if (search) {
+      data = await User.find(query).select(
+        "-password -email -createdAt -updatedAt -__v"
+      );
+    } else {
+      let page = parseInt(req.query.page) || 1;
+      let limit = Math.min(parseInt(req.query.limit) || 10, 50);
+      let skip = (page - 1) * limit;
+
+      data = await User.find(query)
+        .select("-password -email -createdAt -updatedAt -__v")
+        .skip(skip)
+        .limit(limit);
+    }
 
     res.json({
       result: "success",
-      message: "all the users are fetched successfully",
+      message: "Users fetched successfully",
       data: data,
     });
   } catch (err) {
-    res.status(err.status||500).json({
+    res.status(err.status || 500).json({
       result: "error",
-      message: err.message||"Internal server error",
+      message: err.message || "Internal server error",
     });
-    
   }
 });
 
@@ -171,9 +175,9 @@ userRouter.get("/user/search", userAuth, async (req, res) => {
       data: filteredData,
     });
   } catch (err) {
-    res.status(err.status||500).json({
+    res.status(err.status || 500).json({
       result: "error",
-      message: err.message||"Internal server error",
+      message: err.message || "Internal server error",
     });
   }
 });
@@ -184,10 +188,14 @@ userRouter.post("/user/change-password", userAuth, async (req, res) => {
   try {
     const isPasswordValid = await bcrypt.compare(currPass, currUser.password);
 
-    if (!isPasswordValid) throw {status:400, message:"Current password is incorrect"}
+    if (!isPasswordValid)
+      throw { status: 400, message: "Current password is incorrect" };
 
     if (currPass === newPass)
-      throw {status:400,message:"new password can't be same as that os old passwrord"};
+      throw {
+        status: 400,
+        message: "new password can't be same as that os old passwrord",
+      };
 
     const hashedPassword = await bcrypt.hash(newPass, 10);
 
@@ -201,9 +209,9 @@ userRouter.post("/user/change-password", userAuth, async (req, res) => {
       message: "password updated successfully",
     });
   } catch (err) {
-    res.status(err.status||500).json({
+    res.status(err.status || 500).json({
       result: "error",
-      message: err.message||"Internal server error",
+      message: err.message || "Internal server error",
     });
   }
 });
