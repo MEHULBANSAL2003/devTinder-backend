@@ -93,11 +93,45 @@ postRouter.post("/post/delete/:postId", userAuth, async (req, res) => {
 
 postRouter.get("/posts", userAuth, async (req, res) => {
   try {
-
     const currUser = req.user;
     const pipeline = [
       {
         $match: { postedBy: { $ne: currUser._id } },
+      },
+      {
+        $lookup: {
+          from: "connectionrequests",
+          let: { userId: "$postedBy" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ["$fromUserId", currUser._id] },
+                        { $eq: ["$toUserId", "$$userId"] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ["$fromUserId", "$$userId"] },
+                        { $eq: ["$toUserId", currUser._id] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $match: { status: "accepted" },
+            },
+          ],
+          as: "friendship",
+        },
+      },
+      {
+        $match: { friendship: { $ne: [] } }, // Only keep posts where a valid friendship exists
       },
       {
         $sort: { createdAt: -1 },
@@ -137,11 +171,12 @@ postRouter.get("/posts", userAuth, async (req, res) => {
         },
       },
     ];
+
     const posts = await Post.aggregate(pipeline);
 
     res.status(200).json({
       result: "success",
-      message: "all posts fetched successfully",
+      message: "all friend posts fetched successfully",
       data: posts,
     });
   } catch (err) {
@@ -151,6 +186,7 @@ postRouter.get("/posts", userAuth, async (req, res) => {
     });
   }
 });
+
 
 postRouter.post("/post/:status/:postId", userAuth, async (req, res) => {
   try {
