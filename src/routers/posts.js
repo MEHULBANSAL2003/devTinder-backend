@@ -27,7 +27,7 @@ postRouter.post("/post/create", userAuth, async (req, res) => {
     const post = new Post(data);
     await post.save({ session });
 
-    currUser.posts.push(post._id);
+    currUser.posts.unshift(post._id);
     await currUser.save({ session });
 
     await session.commitTransaction();
