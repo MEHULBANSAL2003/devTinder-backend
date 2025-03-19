@@ -98,41 +98,41 @@ postRouter.get("/posts", userAuth, async (req, res) => {
       {
         $match: { postedBy: { $ne: currUser._id } },
       },
-      {
-        $lookup: {
-          from: "connectionrequests",
-          let: { userId: "$postedBy" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $or: [
-                    {
-                      $and: [
-                        { $eq: ["$fromUserId", currUser._id] },
-                        { $eq: ["$toUserId", "$$userId"] },
-                      ],
-                    },
-                    {
-                      $and: [
-                        { $eq: ["$fromUserId", "$$userId"] },
-                        { $eq: ["$toUserId", currUser._id] },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-            {
-              $match: { status: "accepted" },
-            },
-          ],
-          as: "friendship",
-        },
-      },
-      {
-        $match: { friendship: { $ne: [] } }, // Only keep posts where a valid friendship exists
-      },
+      // {
+      //   $lookup: {
+      //     from: "connectionrequests",
+      //     let: { userId: "$postedBy" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $or: [
+      //               {
+      //                 $and: [
+      //                   { $eq: ["$fromUserId", currUser._id] },
+      //                   { $eq: ["$toUserId", "$$userId"] },
+      //                 ],
+      //               },
+      //               {
+      //                 $and: [
+      //                   { $eq: ["$fromUserId", "$$userId"] },
+      //                   { $eq: ["$toUserId", currUser._id] },
+      //                 ],
+      //               },
+      //             ],
+      //           },
+      //         },
+      //       },
+      //       {
+      //         $match: { status: "accepted" },
+      //       },
+      //     ],
+      //     as: "friendship",
+      //   },
+      // },
+      // {
+      //   $match: { friendship: { $ne: [] } }, // Only keep posts where a valid friendship exists
+      // },
       {
         $sort: { createdAt: -1 },
       },
